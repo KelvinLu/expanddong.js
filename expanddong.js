@@ -8,7 +8,7 @@ var ExpandDong = {};
             'expandRatio':  0.667,
             'resizeRatio':  0.1,
             'resizeTime':   10,
-            'trigger': 'click',
+            'trigger': 'mouseover',
         }
         if ((options) && (options instanceof Object)) for (option in options) if (options.hasOwnProperty(option))
             this.options[option] = options[option];
