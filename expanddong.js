@@ -6,8 +6,9 @@ var ExpandDong = {};
         // Load options
         this.options = {
             'expandRatio':  0.667,
-            'resizeRatio':  0.2,
-            'resizeTime':   50,
+            'resizeRatio':  0.1,
+            'resizeTime':   10,
+            'trigger': 'click',
         }
         if ((options) && (options instanceof Object)) for (option in options) if (options.hasOwnProperty(option))
             this.options[option] = options[option];
@@ -19,7 +20,7 @@ var ExpandDong = {};
         // Get list of panels and subelements
         panels = this._panels = [];
 
-        for (var i = container.children.length - 1; i >= 0; i--) {
+        for (var i = 0; i < container.children.length; i++) {
             if ((panelElem = container.children[i]).hasAttribute('panel')) {
                 panelPreview = panelContent = null;
 
@@ -34,7 +35,11 @@ var ExpandDong = {};
                 };
 
                 if ((panelPreview !== null) && (panelContent !== null)) {
-                    panels.push({'panel': panelElem, 'preview': panelPreview, 'content': panelContent});
+                    panels.push({
+                        'panel': panelElem, 
+                        'preview': panelPreview, 
+                        'content': panelContent, 
+                    });
                 }
             }
         };
@@ -69,7 +74,20 @@ var ExpandDong = {};
         this._desiredWidths = this._currentWidths.slice();
 
         // Bind listeners
+        panelsContext = this;
 
+        createActivator = function(index) {
+            var index_container = {'index': index};
+
+            return (function(){
+                this.activate(index_container.index);
+            }).bind(panelsContext);
+        };
+
+        for (var i = this._panels.length - 1; i >= 0; i--) {
+            panel = this._panels[i].panel;
+            panel.addEventListener(this.options.trigger, createActivator(i));
+        };
     };
 
     Panels.prototype.activate = function(index){
