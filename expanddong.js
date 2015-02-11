@@ -21,24 +21,37 @@ var ExpandDong = {};
         panels = this._panels = [];
 
         for (var i = 0; i < container.children.length; i++) {
-            if ((panelElem = container.children[i]).hasAttribute('panel')) {
-                panelPreview = panelContent = null;
+            if ((panelElem = container.children[i]).hasAttribute('panel-container')) {
+                panelPreview = panelFull = null;
 
                 for (var j = panelElem.children.length - 1; j >= 0; j--) {
                     panelChildElem = panelElem.children[j];
 
                     if (panelChildElem.hasAttribute('panel-preview')) {
                         panelPreview = panelChildElem;
-                    } else if (panelChildElem.hasAttribute('panel-content')) {
-                        panelContent = panelChildElem;
+                    } else if (panelChildElem.hasAttribute('panel-full')) {
+                        panelFull = panelChildElem;
                     }
                 };
 
-                if ((panelPreview !== null) && (panelContent !== null)) {
+                if ((panelPreview !== null) && (panelFull !== null)) {
+                    // Create wrapper for contents
+                    wrapper = document.createElement('div');
+                    wrapper.style.position = 'relative';
+                    wrapper.style.height = wrapper.style.width = '100%';
+
+                    panelPreview.parentNode.removeChild(panelPreview);
+                    panelFull.parentNode.removeChild(panelFull);
+
+                    wrapper.appendChild(panelPreview);
+                    wrapper.appendChild(panelFull);
+
+                    panelElem.appendChild(wrapper);
+
                     panels.push({
                         'panel': panelElem, 
                         'preview': panelPreview, 
-                        'content': panelContent, 
+                        'full': panelFull, 
                     });
                 }
             }
@@ -50,7 +63,6 @@ var ExpandDong = {};
 
         // Set starting CSS
         container.style.position = 'relative';
-        container.style = 'discard';
 
         for (var i = panels.length - 1; i >= 0; i--) {
             // Sizing and positioning
@@ -61,12 +73,14 @@ var ExpandDong = {};
             p.panel.style.height = '100%';
             p.panel.style.width = eqWidth;
 
-            p.preview.style.position = p.content.style.position = "absolute";
-            p.preview.style.top = p.preview.style.left = p.content.style.top = p.content.style.left = "0px";
-            p.preview.style.height = p.preview.style.width = p.content.style.height = p.content.style.width = '100%';
+            p.preview.style.position = p.full.style.position = "absolute";
+            p.preview.style.top = p.preview.style.left = p.full.style.top = p.full.style.left = "0px";
+            p.preview.style.height = p.preview.style.width = p.full.style.height = p.full.style.width = '100%';
 
-            // Make all content transparent
-            p.content.style.opacity = '0';
+            p.panel.style['box-sizing'] = p.preview.style['box-sizing'] = p.full.style['box-sizing'] = 'border-box';
+
+            // Make all full divs transparent
+            p.full.style.opacity = '0';
         };
 
         // Set width arrays
@@ -133,7 +147,7 @@ var ExpandDong = {};
 
         // Set panel...
         for (var i = this._currentWidths.length - 1; i >= 0; i--) {
-            p = this._panels[i]
+            p = this._panels[i];
 
             // ... widths
             p.panel.style.width = this._currentWidths[i];
@@ -142,10 +156,10 @@ var ExpandDong = {};
             opacity_delta = (growths[i] - shrinks[i]) / this._containerWidth * 100;
             if (i === this._activePanelIndex) {
                 p.preview.style.opacity = Math.log(opacity_delta);
-                p.content.style.opacity = 1 - Math.log(opacity_delta);
+                p.full.style.opacity = 1 - Math.log(opacity_delta);
             } else if (this._pristine == false) {
                 p.preview.style.opacity = 1 - Math.log(opacity_delta);
-                p.content.style.opacity = Math.log(opacity_delta);           
+                p.full.style.opacity = Math.log(opacity_delta);           
             }
         }
 
