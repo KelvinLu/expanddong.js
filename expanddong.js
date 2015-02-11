@@ -18,6 +18,7 @@ var ExpandDong = {};
         // Set active panel
         this._activePanelIndex = null;
         this._pristine = true;
+        this._canActivatePanels = true;
 
         // Get list of panels and subelements
         panels = this._panels = [];
@@ -79,7 +80,8 @@ var ExpandDong = {};
             var index_container = {'index': index};
 
             return (function(){
-                this.activate(index_container.index);
+                if (this._canActivatePanels)
+                    this.activate(index_container.index);
             }).bind(panelsContext);
         };
 
@@ -103,9 +105,11 @@ var ExpandDong = {};
                 this.activate(this._activePanelIndex);
             else
                 this.deactivate();
+            this._canActivatePanels = true;
         } else {
             this._setSmallCSS();
             this.deactivateSmall();
+            this._canActivatePanels = false;
         }
     };
 
@@ -156,8 +160,6 @@ var ExpandDong = {};
             p.full.style.pointerEvents = 'auto';
             p.preview.style.opacity = '0';
             p.full.style.opacity = '1';
-
-            p.panel.style.width = '100%';
         };
     };
 
