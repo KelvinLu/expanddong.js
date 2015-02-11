@@ -2,14 +2,16 @@ var ExpandDong = {};
 
 (function(ExpandDong){
 
-    Panels = ExpandDong.Panels = function(container, options){
+    var Panels = ExpandDong.Panels = function(container, options){
         // Load options
         this.options = {
             'expandRatio':  0.667,
             'resizeRatio':  0.1,
             'resizeTime':   10,
-            'trigger': 'mouseover',
+            'trigger':      'mouseover',
+            'smallWidth':   700,
         }
+
         if ((options) && (options instanceof Object)) for (option in options) if (options.hasOwnProperty(option))
             this.options[option] = options[option];
 
@@ -58,35 +60,17 @@ var ExpandDong = {};
         };
 
         // Container properties
-        containerWidth = this._containerWidth = container.clientWidth;
-        eqWidth = (containerWidth - 1)/ panels.length;
-
-        // Set starting CSS
-        container.style.position = 'relative';
-        container.style.overflow = 'hidden';
-
-        for (var i = panels.length - 1; i >= 0; i--) {
-            // Sizing and positioning
-            p = panels[i];
-            p.panel.style.position = 'relative';
-            p.panel.style.display = 'inline-block';
-            p.panel.style.marginRight = '-4px';
-            p.panel.style.height = '100%';
-            p.panel.style.width = eqWidth;
-
-            p.preview.style.position = p.full.style.position = "absolute";
-            p.preview.style.top = p.preview.style.left = p.full.style.top = p.full.style.left = "0px";
-            p.preview.style.height = p.preview.style.width = p.full.style.height = p.full.style.width = '100%';
-
-            p.panel.style['box-sizing'] = p.preview.style['box-sizing'] = p.full.style['box-sizing'] = 'border-box';
-
-            // Make all full divs transparent
-            p.full.style.opacity = '0';
-        };
+        this._container = container;
+        containerWidth = this._containerWidth = this._container.clientWidth;
+        eqWidth = this._eqWidth = (containerWidth - 1)/ panels.length;
 
         // Set width arrays
         this._currentWidths = Array.apply(null, Array(panels.length)).map(function(){ return eqWidth; });
         this._desiredWidths = this._currentWidths.slice();
+
+        // Set starting CSS
+        container.style.position = 'relative';
+        container.style.overflow = 'hidden';
 
         // Bind listeners
         panelsContext = this;
@@ -99,12 +83,30 @@ var ExpandDong = {};
             }).bind(panelsContext);
         };
 
-        for (var i = this._panels.length - 1; i >= 0; i--) {
-            panel = this._panels[i].panel;
+        for (var i = panels.length - 1; i >= 0; i--) {
+            panel = panels[i].panel;
             panel.addEventListener(this.options.trigger, createActivator(i));
         };
 
-        this.deactivate();
+        window.addEventListener('resize', this._doResponsiveSizing.bind(this));
+
+        // Initialize sizing
+        this._doResponsiveSizing();
+    };
+
+    Panels.prototype._doResponsiveSizing = function() {
+        this._containerWidth = this._container.clientWidth;
+
+        if (window.innerWidth >= this.options.smallWidth) {
+            this._setFullCSS();
+            if (this._activePanelIndex !== null)
+                this.activate(this._activePanelIndex);
+            else
+                this.deactivate();
+        } else {
+            this._setSmallCSS();
+            this.deactivateSmall();
+        }
     };
 
     Panels.prototype.activate = function(index){
@@ -131,16 +133,32 @@ var ExpandDong = {};
     Panels.prototype.deactivate = function(){
         this._activePanelIndex = null;
 
-        eqWidth = (this._containerWidth - 1)/ this._panels.length;
-        this._desiredWidths = Array.apply(null, Array(panels.length)).map(function(){ return eqWidth; });
+        eqWidth = (this._containerWidth - 1) / this._panels.length;
+        this._desiredWidths = Array.apply(null, Array(this._panels.length)).map(function(){ return eqWidth; });
 
         for (var i = this._panels.length - 1; i >= 0; i--) {
             p = this._panels[i];
             p.preview.style.pointerEvents = 'auto';
             p.full.style.pointerEvents = 'none';
+            p.preview.style.opacity = '1';
+            p.full.style.opacity = '0';
         };
 
         this._resize(reset = true);
+    };
+
+    Panels.prototype.deactivateSmall = function(){
+        this._activePanelIndex = null;
+
+        for (var i = this._panels.length - 1; i >= 0; i--) {
+            p = this._panels[i];
+            p.preview.style.pointerEvents = 'none';
+            p.full.style.pointerEvents = 'auto';
+            p.preview.style.opacity = '0';
+            p.full.style.opacity = '1';
+
+            p.panel.style.width = '100%';
+        };
     };
 
     Panels.prototype._resize = function(reset){
@@ -153,15 +171,16 @@ var ExpandDong = {};
         shrinks = differences.map(function(d){ return (d < 0) ? (d * resizeRatio) : 0; });
 
         sum_reduce = function(acc, cur){ return acc + cur; };
-        delta = growths.reduce(sum_reduce, 0) + shrinks.reduce(sum_reduce, 0);
         abs_delta = growths.reduce(sum_reduce, 0) - shrinks.reduce(sum_reduce, 0);
 
-        compensate = delta / this._panels.length;
-        compensator = function(d){ return d + compensate; };
-        growths = growths.map(compensator);
-        shrinks = shrinks.map(compensator);
+        currentWidths = currentWidths.map(function(d, d_i){ return d + growths[d_i] + shrinks[d_i]; });
 
-        this._currentWidths = currentWidths.map(function(d, d_i){ return d + growths[d_i] + shrinks[d_i]; });
+        // Handle overflow when sizing down window
+        while (currentWidths.reduce(sum_reduce, 0) > this._containerWidth) {
+            currentWidths = currentWidths.map(function(d, d_i){ return d + shrinks[d_i]; });
+        }
+
+        this._currentWidths = currentWidths;
 
         // Set panel...
         for (var i = this._currentWidths.length - 1; i >= 0; i--) {
@@ -186,6 +205,48 @@ var ExpandDong = {};
         else {
             this._pristine = reset ? true : false;
         }
+    };
+
+    Panels.prototype._setFullCSS = function() {
+        for (var i = this._panels.length - 1; i >= 0; i--) {
+            // Sizing and positioning
+            p = this._panels[i];
+            p.panel.style.position = 'relative';
+            p.panel.style.display = 'inline-block';
+            p.panel.style.marginRight = '-4px';
+            p.panel.style.height = '100%';
+            p.panel.style.width = this._eqWidth;
+
+            p.preview.style.position = p.full.style.position = "absolute";
+            p.preview.style.top = p.preview.style.left = p.full.style.top = p.full.style.left = "0px";
+            p.preview.style.height = p.preview.style.width = p.full.style.height = p.full.style.width = '100%';
+
+            p.panel.style['box-sizing'] = p.preview.style['box-sizing'] = p.full.style['box-sizing'] = 'border-box';
+
+            // Make all full divs transparent
+            p.full.style.opacity = '0';
+        };
+    };
+
+    Panels.prototype._setSmallCSS = function() {
+        for (var i = this._panels.length - 1; i >= 0; i--) {
+            // Sizing and positioning
+            p = this._panels[i];
+            p.panel.style.position = 'relative';
+            p.panel.style.display = 'block';
+            p.panel.style.marginRight = '0px';
+            p.panel.style.height = 'auto';
+            p.panel.style.width = '100%';
+
+            p.preview.style.position = p.full.style.position = "absolute";
+            p.preview.style.top = p.preview.style.left = p.full.style.top = p.full.style.left = "0px";
+            p.preview.style.height = p.preview.style.width = p.full.style.height = p.full.style.width = '100%';
+
+            p.panel.style['box-sizing'] = p.preview.style['box-sizing'] = p.full.style['box-sizing'] = 'border-box';
+
+            // Make all preview divs transparent
+            p.preview.style.opacity = '0';
+        };
     };
 
 })(ExpandDong);
