@@ -103,6 +103,8 @@ var ExpandDong = {};
             panel = this._panels[i].panel;
             panel.addEventListener(this.options.trigger, createActivator(i));
         };
+
+        this.deactivate();
     };
 
     Panels.prototype.activate = function(index){
@@ -114,6 +116,15 @@ var ExpandDong = {};
         this._desiredWidths = Array.apply(null, Array(this._panels.length)).map(function(){ return inactiveWidth; });
         this._desiredWidths[index] = activeWidth;
 
+        for (var i = this._panels.length - 1; i >= 0; i--) {
+            p = this._panels[i];
+            p.preview.style.pointerEvents = 'auto';
+            p.full.style.pointerEvents = 'none';
+        };
+
+        this._panels[index].preview.style.pointerEvents = 'none';
+        this._panels[index].full.style.pointerEvents = 'auto';
+
         this._resize();
     };
 
@@ -122,6 +133,12 @@ var ExpandDong = {};
 
         eqWidth = (this._containerWidth - 1)/ this._panels.length;
         this._desiredWidths = Array.apply(null, Array(panels.length)).map(function(){ return eqWidth; });
+
+        for (var i = this._panels.length - 1; i >= 0; i--) {
+            p = this._panels[i];
+            p.preview.style.pointerEvents = 'auto';
+            p.full.style.pointerEvents = 'none';
+        };
 
         this._resize(reset = true);
     };
@@ -166,8 +183,9 @@ var ExpandDong = {};
 
         // Recursive event loop call
         if (abs_delta > 1) setTimeout(this._resize.bind(this), this.options.resizeTime);
-        else if (reset) this._pristine = true;
-        else  this._pristine = false;
+        else {
+            this._pristine = reset ? true : false;
+        }
     };
 
 })(ExpandDong);
