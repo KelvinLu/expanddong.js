@@ -63,6 +63,7 @@ var ExpandDong = {};
 
         // Set starting CSS
         container.style.position = 'relative';
+        container.style.overflow = 'hidden';
 
         for (var i = panels.length - 1; i >= 0; i--) {
             // Sizing and positioning
