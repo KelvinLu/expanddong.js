@@ -241,7 +241,8 @@ var ExpandDong = {};
             p.panel.style.height = 'auto';
             p.panel.style.width = '100%';
 
-            p.preview.style.position = p.full.style.position = (this.options.smallFullHeight) ? "absolute" : "relative";
+            p.preview.style.position = "absolute";
+            p.full.style.position = (this.options.smallFullHeight) ? "absolute" : "relative";
             p.preview.style.top = p.preview.style.left = p.full.style.top = p.full.style.left = "0px";
             p.preview.style.width = p.full.style.width = '100%';
             
