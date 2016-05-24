@@ -5,11 +5,12 @@ var ExpandDong = {};
     var Panels = ExpandDong.Panels = function(container, options){
         // Load options
         this.options = {
-            'expandRatio':  0.667,
-            'resizeRatio':  0.1,
-            'resizeTime':   10,
-            'trigger':      'mouseover',
-            'smallWidth':   700,
+            'expandRatio':      0.667,
+            'resizeRatio':      0.1,
+            'resizeTime':       10,
+            'trigger':          'mouseover',
+            'smallWidth':       700,
+            'smallFullHeight':  true,
         }
 
         if ((options) && (options instanceof Object)) for (option in options) if (options.hasOwnProperty(option))
@@ -240,9 +241,12 @@ var ExpandDong = {};
             p.panel.style.height = 'auto';
             p.panel.style.width = '100%';
 
-            p.preview.style.position = p.full.style.position = "absolute";
+            p.preview.style.position = p.full.style.position = (this.options.smallFullHeight) ? "absolute" : "relative";
             p.preview.style.top = p.preview.style.left = p.full.style.top = p.full.style.left = "0px";
-            p.preview.style.height = p.preview.style.width = p.full.style.height = p.full.style.width = '100%';
+            p.preview.style.width = p.full.style.width = '100%';
+            
+            if (this.options.smallFullHeight)
+                p.preview.style.height = p.full.style.height = '100%';
 
             p.panel.style['box-sizing'] = p.preview.style['box-sizing'] = p.full.style['box-sizing'] = 'border-box';
 
